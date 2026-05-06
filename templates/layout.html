@@ -15,11 +15,17 @@
         <div class="container-fluid">
             <header>
                 <div class="container g-0">
-                    <img class="img-fluid" src="static/img/OVG.webp" style="max-height: 100px" alt="OVG logo">
+                    <img class="img-fluid" src="static/img/OVG.webp" style="max-height: 50px" alt="OVG logo">
                 </div>
-                <div class="container justify-content-end">
-                    <p>Konts</p>
+                <div class="d-grid justify-content-end">
+                    <a class="navbar-brand" href="konts.html">Konts</a>
                 </div>
+                <nav class="navbar" style="max-height: 50px">
+                    <div id="main-navbar" class="container gap-4 d-md-block">
+                        <a class="navbar-brand" href="index.html">Sākums</a>
+                        <a class="navbar-brand" href="arhivs.html">Arhivs</a>
+                        <a class="navbar-brand" href="sudzibas.html">Sūdzības</a>
+                </nav>
             </header>
             {% block body %}
             {% endblock %}
