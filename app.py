@@ -17,3 +17,11 @@ def registrs():
     registrs = db.execute("SELECT * FROM registrs").fetchall()
     db.close()
     return render_template("pieteicies.html",registrs=registrs)
+
+@app.route("/konts.html")
+def konts():
+    return render_template("konts.html")
+
+@app.route("/arhivs.html")
+def arhivs():
+    return render_template("arhivs.html")
