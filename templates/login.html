@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<body>
+    <title>Pieslēgšanās</title>
+
+    <h2>Lūdzu, pievienojaties</h2>
+
+    {% if kluda %}
+        <p style="color: red;">{{ kluda }}</p>
+    {% endif %}
+
+    <form method="POST" action="/login">
+        <label>Lietotājvārds:</label><br>
+        <input type="text" name="username" required><br><br>
+
+        <label>Parole:</label><br>
+        <input type="password" name="password" required><br><br>
+
+        <button type="submit">Ienākt</button>
+    </form>
+</body>
+{% endblock  %}
