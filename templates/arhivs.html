@@ -3,5 +3,16 @@
 {% block body %}
     <h1>_______________________________________</h1>
     <h2>Arhīvs ar mantām, pēdējās divās nedēļas</h2>
-
+    <table>
+                    <tbody>
+                        {% for r in mantubaze %}
+                            <tr>
+                                <td>{{ r["nosaukums"] }}</td>
+                                <td>{{ r["apraksts"] }}</td>
+                                <td>{{ r["atrasanas_vieta"] }}</td>
+                                <td>{{ r["laiks"] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
 {% endblock  %}

@@ -2,11 +2,12 @@
 
 {% block body %}
     <h1>Konts</h1>
-    <form action="/register" method="post">
-        <input autocomplete="off" autofocus name="name" placeholder="Matnas nosaukums" type="text">
-        <input autocomplete="off" autofocus name="name" placeholder="kur atrasta" type="text">
-        <input autocomplete="off" autofocus name="name" placeholder="kad atrasta" type="text">
-        <input type="file" id="manta" name="manta" accept="image/png, image/jpeg" />'<br>
+    <form action="/konts" method="post">
+        <input autocomplete="off" autofocus name="nosaukums" placeholder="Matnas nosaukums" type="text">
+        <input autocomplete="off" autofocus name="apraksts" placeholder="Mantas apraksts" type="text">
+        <input autocomplete="off" autofocus name="kur_atrasts" placeholder="kur atrasta" type="text">
+        <input autocomplete="off" autofocus name="k_atrasts" placeholder="kad atrasta" type="text">
+        <input type="file" id="manta" name="manta" accept="image/png, image/jpeg" /><br>
     <button type="submit">Reģistrēt mantu</button>
     </form>
 {% endblock  %}
