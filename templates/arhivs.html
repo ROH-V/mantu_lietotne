@@ -1,18 +1,54 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    <h1>_______________________________________</h1>
-    <h2>Arhīvs ar mantām, pēdējās divās nedēļas</h2>
-    <table>
-                    <tbody>
-                        {% for r in mantubaze %}
-                            <tr>
-                                <td>{{ r["nosaukums"] }}</td>
-                                <td>{{ r["apraksts"] }}</td>
-                                <td>{{ r["atrasanas_vieta"] }}</td>
-                                <td>{{ r["laiks"] }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-{% endblock  %}
+<div class="header-section">
+    <h1>Mantu Arhīvs</h1>
+    <p>Šeit redzamas mantas, kuras jau ir atradušas saimniekus vai pieteicējus.</p>
+</div>
+
+<div class="grid-container archive-grid">
+    {% for r in mantubaze %}
+    <div class="archive-card">
+        <div class="archive-img">
+            {% if r['attels'] %}
+                <img src="{{ url_for('static', filename='uploads/' + r['attels']) }}" alt="{{ r['nosaukums'] }}">
+            {% else %}
+                <div class="no-img-small">Nav attēla</div>
+            {% endif %}
+        </div>
+        <div class="archive-info">
+            <span class="status-badge">Atrasts</span>
+            <h3>{{ r["nosaukums"] }}</h3>
+            <p class="desc">{{ r["apraksts"] }}</p>
+            <div class="details">
+                <span>📍 {{ r["atrasanas_vieta"] }}</span>
+                <span>📅 {{ r["laiks"] }}</span>
+            </div>
+            <div class="claimant-box">
+                <strong>Pieteicās:</strong> {{ r["p_liet"] }}<br>
+                <small>{{ r["p_laiks"] }}</small>
+            </div>
+
+            {# Pievienotās vadības pogas ielogotam lietotājam #}
+            {% if session.logged_in %}
+            <div class="admin-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                <form action="{{ url_for('cancel_request') }}" method="POST" style="flex: 1;">
+                    <input type="hidden" name="id" value="{{ r['id'] }}">
+                    <button type="submit" style="width: 100%; background: #f39c12; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">
+                        Atsaukt
+                    </button>
+                </form>
+
+                <form action="{{ url_for('delete_item') }}" method="POST" style="flex: 1;" onsubmit="return confirm('Vai tiešām pilnībā dzēst šo ierakstu?');">
+                    <input type="hidden" name="id" value="{{ r['id'] }}">
+                    <button type="submit" style="width: 100%; background: #e74c3c; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">
+                        Dzēst
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

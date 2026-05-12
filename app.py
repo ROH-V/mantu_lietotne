@@ -1,6 +1,17 @@
-from flask import Flask, render_template, session, redirect, url_for, request
-app = Flask(__name__)
+import os
 import sqlite3
+from flask import Flask, render_template, session, redirect, url_for, request
+from werkzeug.utils import secure_filename
+from datetime import datetime, timedelta
+
+app = Flask(__name__)
+app.secret_key = "cookie_data"
+
+UPLOAD_FOLDER = 'static/uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def db_connection():
     conn = sqlite3.connect("mantubaze.db")
@@ -12,68 +23,114 @@ def index():
     db = db_connection()
     mantubaze = db.execute("SELECT * FROM mantubaze WHERE ivn=1").fetchall()
     db.close()
-    return render_template("index.html",mantubaze=mantubaze)
+    return render_template("index.html", mantubaze=mantubaze)
 
+@app.route("/deregister", methods=["POST"])
 def deregister():
-    id = request.form.get("id")
-    if id:
+    item_id = request.form.get("id")
+    vards = request.form.get("lietotajs")
+
+    if item_id and vards:
+        pasreizejais_laiks = datetime.now().strftime("%d.%m.%Y %H:%M")
         db = db_connection()
-        db.execute("DELETE FROM registrants WHERE id=?",(id,))
+        db.execute("UPDATE mantubaze SET ivn = 0, p_liet = ?, p_laiks = ? WHERE id = ?",
+                   (vards, pasreizejais_laiks, item_id))
         db.commit()
         db.close()
-    #confirmed
-    db = db_connection()
-    mantubaze = db.execute("SELECT * FROM mantubaze WHERE ivn = 1").fetchall()
-    db.close()
-    return render_template("index.html",mantubaze=mantubaze)
+    return redirect(url_for("index"))
 
 @app.route("/arhivs")
 def arhivs():
     db = db_connection()
+    # Pārbaudām vecus ierakstus pirms rādīšanas
+    arhiva_dati = db.execute("SELECT id, p_laiks, attels FROM mantubaze WHERE ivn=0").fetchall()
+    pasreizejais_laiks = datetime.now()
+    divas_nedelas = timedelta(weeks=2) # Nomainīts no 1 min uz 2 nedēļām
+
+    for r in arhiva_dati:
+        if r['p_laiks']:
+            try:
+                pieteiksanas_datums = datetime.strptime(r['p_laiks'], "%d.%m.%Y %H:%M")
+                if pasreizejais_laiks - pieteiksanas_datums > divas_nedelas:
+                    if r['attels']:
+                        cels = os.path.join(app.config['UPLOAD_FOLDER'], r['attels'])
+                        if os.path.exists(cels):
+                            os.remove(cels)
+                    db.execute("DELETE FROM mantubaze WHERE id = ?", (r['id'],))
+            except ValueError:
+                continue
+    db.commit()
+
     mantubaze = db.execute("SELECT * FROM mantubaze WHERE ivn=0").fetchall()
     db.close()
-    return render_template("arhivs.html",mantubaze=mantubaze)
+    return render_template("arhivs.html", mantubaze=mantubaze)
 
-app.secret_key = "cookie_data"
+@app.route("/delete_item", methods=["POST"])
+def delete_item():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
 
+    item_id = request.form.get("id")
+    if item_id:
+        db = db_connection()
+        # Izdzēšam attēlu no mapes
+        r = db.execute("SELECT attels FROM mantubaze WHERE id = ?", (item_id,)).fetchone()
+        if r and r['attels']:
+            cels = os.path.join(app.config['UPLOAD_FOLDER'], r['attels'])
+            if os.path.exists(cels):
+                os.remove(cels)
 
-@app.route("/konts", methods=["POST"])
-def register():
-    #validation
-    nosaukums = request.form.get("nosaukums")
-    if not nosaukums:
-        return render_template("konts.html",message=" error")
-    
-    apraksts = request.form.get("apraksts")
-    if not apraksts:
-        return render_template("konts.html",message=" error")
-    
-    kur_atrasts = request.form.get("kur_atrasts")
-    if not kur_atrasts:
-        return render_template("konts.html",message=" error")
-    
-    k_atrasts = request.form.get("k_atrasts")
-    if not k_atrasts:
-        return render_template("konts.html",message=" error")
+        db.execute("DELETE FROM mantubaze WHERE id = ?", (item_id,))
+        db.commit()
+        db.close()
+    return redirect(url_for("arhivs"))
 
-    db = db_connection()
-    db.execute("INSERT INTO mantubaze (nosaukums,apraksts, atrasanas_vieta, laiks, ivn) VALUES(?, ?, ?, ?, ?)", (nosaukums, apraksts, kur_atrasts, k_atrasts,1))
-    db.commit()
-    db.close()
+@app.route("/cancel_request", methods=["POST"])
+def cancel_request():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
 
-    #confirmed
-    db = db_connection()
-    mantubaze = db.execute("SELECT * FROM mantubaze WHERE ivn = 1").fetchall()
-    db.close()
-    return render_template("index.html",mantubaze=mantubaze)
+    item_id = request.form.get("id")
+    if item_id:
+        db = db_connection()
+        # Atgriežam mantu publiskajā sarakstā
+        db.execute("UPDATE mantubaze SET ivn = 1, p_liet = NULL, p_laiks = NULL WHERE id = ?", (item_id,))
+        db.commit()
+        db.close()
+    return redirect(url_for("arhivs"))
 
-#################################
-@app.route("/konts")
+@app.route("/konts", methods=["GET", "POST"])
 def konts():
     if not session.get("logged_in"):
         return redirect(url_for("login"))
 
-    return render_template("konts.html")
+    message = None
+    if request.method == "POST":
+        nosaukums = request.form.get("nosaukums")
+        apraksts = request.form.get("apraksts")
+        kur_atrasts = request.form.get("kur_atrasts")
+        k_atrasts = request.form.get("k_atrasts")
+        file = request.files.get("manta")
+
+        if not all([nosaukums, apraksts, kur_atrasts, k_atrasts]):
+            message = "Kļūda: Visi lauki ir obligāti!"
+        else:
+            filename = None
+            if file and file.filename != '':
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+            db = db_connection()
+            db.execute("""
+                INSERT INTO mantubaze
+                (nosaukums, apraksts, atrasanas_vieta, laiks, ivn, attels, p_liet, p_laiks)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+            """, (nosaukums, apraksts, kur_atrasts, k_atrasts, 1, filename, None, None))
+            db.commit()
+            db.close()
+            return redirect(url_for("index"))
+
+    return render_template("konts.html", message=message)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -81,14 +138,12 @@ def login():
     if request.method == "POST":
         vards = request.form.get("username")
         parole = request.form.get("password")
-
         if vards == "OVG_" and parole == "uwu":
             session["logged_in"] = True
             session["user"] = vards
             return redirect(url_for("konts"))
         else:
             kluda = "Nepareizs lietotājvārds vai parole!"
-
     return render_template("login.html", kluda=kluda)
 
 @app.route("/logout")
@@ -98,7 +153,3 @@ def logout():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-#pythonanywhere

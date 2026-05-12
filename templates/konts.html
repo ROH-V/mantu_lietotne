@@ -1,13 +1,46 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    <h1>Konts</h1>
-    <form action="/konts" method="post">
-        <input autocomplete="off" autofocus name="nosaukums" placeholder="Matnas nosaukums" type="text">
-        <input autocomplete="off" autofocus name="apraksts" placeholder="Mantas apraksts" type="text">
-        <input autocomplete="off" autofocus name="kur_atrasts" placeholder="kur atrasta" type="text">
-        <input autocomplete="off" autofocus name="k_atrasts" placeholder="kad atrasta" type="text">
-        <input type="file" id="manta" name="manta" accept="image/png, image/jpeg" /><br>
-    <button type="submit">Reģistrēt mantu</button>
+<div class="form-container">
+    <div class="header-section text-center">
+        <h1>Pievienot jaunu mantu</h1>
+        <p>Aizpildiet formu, lai reģistrētu atradumu</p>
+    </div>
+
+    {% if message %}
+        <div class="alert alert-info">{{ message }}</div>
+    {% endif %}
+
+    <form action="/konts" method="post" enctype="multipart/form-data" class="styled-form">
+        <div class="form-group">
+            <label>Mantas nosaukums</label>
+            <input name="nosaukums" type="text" placeholder="Piemēram: Melns lietussargs" required>
+        </div>
+
+        <div class="form-group">
+            <label>Apraksts</label>
+            <textarea name="apraksts" rows="3" placeholder="Aprakstiet detaļas..." required></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Kur atrasts?</label>
+                <input name="kur_atrasts" type="text" placeholder="Telpa, stāvs..." required>
+            </div>
+            <div class="form-group">
+                <label>Kad atrasts?</label>
+                <input name="k_atrasts" type="text" placeholder="Datums vai laiks" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="file-label">
+                <span>📷 Pievienot attēlu</span>
+                <input type="file" name="manta" accept="image/png, image/jpeg">
+            </label>
+        </div>
+
+        <button type="submit" class="btn-submit">Reģistrēt mantu</button>
     </form>
-{% endblock  %}
+</div>
+{% endblock %}

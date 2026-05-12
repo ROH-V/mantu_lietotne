@@ -1,27 +1,83 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    <h1>_______________________________________</h1>
-    <div class="section">
+<div class="main-container">
+    <header class="page-header">
+        <h1>Aktuālais mantu saraksts</h1>
+        <p class="subtitle">Atrastās mantas, kas gaida savus īpašniekus</p>
+    </header>
 
-                <h2>Mantu saraksts</h2>
-                <table>
-                    <tbody>
-                        {% for r in mantubaze %}
-                            <tr>
-                                <td>{{ r["nosaukums"] }}</td>
-                                <td>{{ r["apraksts"] }}</td>
-                                <td>{{ r["atrasanas_vieta"] }}</td>
-                                <td>{{ r["laiks"] }}</td>
-                                <td>
-                        <form action="/deregister" method="post">
-                        <input name="id" type="hidden" value="{{r['id']}}">
-                        <button type="submit">Pieteikties mantai</button>
+    <div class="inventory-wrapper">
+        <table class="desktop-table">
+            <thead>
+                <tr>
+                    <th>Attēls</th>
+                    <th>Informācija</th>
+                    <th>Atrašanās vieta</th>
+                    <th>Laiks</th>
+                    <th>Darbība</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in mantubaze %}
+                <tr>
+                    <td class="img-col">
+                        {% if r['attels'] %}
+                            <img src="{{ url_for('static', filename='uploads/' + r['attels']) }}" class="table-img">
+                        {% else %}
+                            <div class="no-img-placeholder">Nav attēla</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong class="item-name">{{ r["nosaukums"] }}</strong>
+                        <p class="item-desc">{{ r["apraksts"] }}</p>
+                    </td>
+                    <td><span class="location-tag">{{ r["atrasanas_vieta"] }}</span></td>
+                    <td class="date-text">{{ r["laiks"] }}</td>
+                    <td>
+                        <button class="btn-claim" onclick="pieteikties({{ r['id'] }})">Pieteikties</button>
+                        <form id="form-{{ r['id'] }}" action="/deregister" method="post" style="display:none;">
+                            <input name="id" type="hidden" value="{{ r['id'] }}">
+                            <input name="lietotajs" id="user-{{ r['id'] }}" type="hidden">
                         </form>
                     </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="mobile-cards">
+            {% for r in mantubaze %}
+            <div class="item-card">
+                <div class="card-image">
+                    {% if r['attels'] %}
+                        <img src="{{ url_for('static', filename='uploads/' + r['attels']) }}">
+                    {% else %}
+                        <div class="no-img-placeholder">Nav attēla</div>
+                    {% endif %}
+                </div>
+                <div class="card-content">
+                    <span class="location-tag small">{{ r["atrasanas_vieta"] }}</span>
+                    <h3>{{ r["nosaukums"] }}</h3>
+                    <p>{{ r["apraksts"] }}</p>
+                    <div class="card-footer">
+                        <span class="date-text">{{ r["laiks"] }}</span>
+                        <button class="btn-claim full-width" onclick="pieteikties({{ r['id'] }})">Pieteikties</button>
+                    </div>
+                </div>
             </div>
-{% endblock  %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function pieteikties(id) {
+        let vards = prompt("Ievadiet savu vārdu, lai pieteiktos:");
+        if (vards && vards.trim() !== "") {
+            document.getElementById('user-' + id).value = vards.trim();
+            document.getElementById('form-' + id).submit();
+        }
+    }
+</script>
+{% endblock %}
