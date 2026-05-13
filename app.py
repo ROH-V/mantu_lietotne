@@ -42,10 +42,10 @@ def deregister():
 @app.route("/arhivs")
 def arhivs():
     db = db_connection()
-    # Pārbaudām vecus ierakstus pirms rādīšanas
+    # Pārbaudām vecus ierakstus pirms rādīšanas, lai nejauktu arhivu ar sakumu
     arhiva_dati = db.execute("SELECT id, p_laiks, attels FROM mantubaze WHERE ivn=0").fetchall()
     pasreizejais_laiks = datetime.now()
-    divas_nedelas = timedelta(weeks=2) # Nomainīts no 1 min uz 2 nedēļām
+    divas_nedelas = timedelta(weeks=2)
 
     for r in arhiva_dati:
         if r['p_laiks']:
@@ -73,7 +73,7 @@ def delete_item():
     item_id = request.form.get("id")
     if item_id:
         db = db_connection()
-        # Izdzēšam attēlu no mapes
+        # Izdzēšam attēlu no mapes, kad tas nav vairs nepieciešams
         r = db.execute("SELECT attels FROM mantubaze WHERE id = ?", (item_id,)).fetchone()
         if r and r['attels']:
             cels = os.path.join(app.config['UPLOAD_FOLDER'], r['attels'])
@@ -93,7 +93,7 @@ def cancel_request():
     item_id = request.form.get("id")
     if item_id:
         db = db_connection()
-        # Atgriežam mantu publiskajā sarakstā
+        # Atgriežam mantu publiskajā sarakstā, ja nav atnācis īpašnieks vai ir kļūda
         db.execute("UPDATE mantubaze SET ivn = 1, p_liet = NULL, p_laiks = NULL WHERE id = ?", (item_id,))
         db.commit()
         db.close()
