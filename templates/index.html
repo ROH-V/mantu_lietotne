@@ -4,23 +4,27 @@
 <div class="main-container">
     <header class="page-header">
         <h1>Aktuālais mantu saraksts</h1>
-        <p class="subtitle">Atrastās mantas, kas gaida savus īpašniekus</p>
     </header>
 
+    <div class="search-section" style="margin-bottom: 25px;">
+        <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Meklēt mantu"
+               style="width: 100%; max-width: 400px; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 25px; outline: none; transition: 0.3s; font-size: 1rem;">
+    </div>
+
     <div class="inventory-wrapper">
-        <table class="desktop-table">
+        <table class="desktop-table" id="mantuTabula">
             <thead>
                 <tr>
                     <th>Attēls</th>
                     <th>Apraksts</th>
                     <th>Vieta kur atrasts</th>
-                    <th>Laiks kad atrasts</th>
+                    <th>Laiks</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in mantubaze %}
-                <tr>
+                <tr class="item-row">
                     <td class="img-col">
                         {% if r['attels'] %}
                             <img src="{{ url_for('static', filename='uploads/' + r['attels']) }}" class="table-img">
@@ -46,7 +50,7 @@
             </tbody>
         </table>
 
-        <div class="mobile-cards">
+        <div class="mobile-cards" id="kartisuSaraksts">
             {% for r in mantubaze %}
             <div class="item-card">
                 <div class="card-image">
@@ -72,6 +76,26 @@
 </div>
 
 <script>
+    // Meklēšanas funkcija lietotājiem
+    function filterItems() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+
+        // Filtrē tabulas rindas
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? "" : "none";
+        });
+
+        // Filtrē mobilās kartītes
+        const cards = document.querySelectorAll('.item-card');
+        cards.forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(filter) ? "" : "none";
+        });
+    }
+
     function pieteikties(id) {
         let vards = prompt("Ievadiet savu vārdu, lai pieteiktos:");
         if (vards && vards.trim() !== "") {
@@ -79,5 +103,15 @@
             document.getElementById('form-' + id).submit();
         }
     }
+
+    // Stila izvēle meklēšanas joslai, kad tā ir aktīva
+    document.getElementById('searchInput').addEventListener('focus', function() {
+        this.style.borderColor = '#4a90e2';
+        this.style.boxShadow = '0 0 8px rgba(74, 144, 226, 0.2)';
+    });
+    document.getElementById('searchInput').addEventListener('blur', function() {
+        this.style.borderColor = '#e0e0e0';
+        this.style.boxShadow = 'none';
+    });
 </script>
 {% endblock %}

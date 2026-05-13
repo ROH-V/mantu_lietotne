@@ -21,7 +21,8 @@ def db_connection():
 @app.route("/")
 def index():
     db = db_connection()
-    mantubaze = db.execute("SELECT * FROM mantubaze WHERE ivn=1").fetchall()
+    # Pievienots ORDER BY, lai jaunākie atradumi būtu saraksta augšā
+    mantubaze = db.execute("SELECT * FROM mantubaze WHERE ivn=1 ORDER BY id DESC").fetchall()
     db.close()
     return render_template("index.html", mantubaze=mantubaze)
 
@@ -42,7 +43,6 @@ def deregister():
 @app.route("/arhivs")
 def arhivs():
     db = db_connection()
-    # Pārbaudām vecus ierakstus pirms rādīšanas, lai nejauktu arhivu ar sakumu
     arhiva_dati = db.execute("SELECT id, p_laiks, attels FROM mantubaze WHERE ivn=0").fetchall()
     pasreizejais_laiks = datetime.now()
     divas_nedelas = timedelta(weeks=2)
@@ -61,7 +61,7 @@ def arhivs():
                 continue
     db.commit()
 
-    mantubaze = db.execute("SELECT * FROM mantubaze WHERE ivn=0").fetchall()
+    mantubaze = db.execute("SELECT * FROM mantubaze WHERE ivn=0 ORDER BY p_laiks DESC").fetchall()
     db.close()
     return render_template("arhivs.html", mantubaze=mantubaze)
 
@@ -73,7 +73,6 @@ def delete_item():
     item_id = request.form.get("id")
     if item_id:
         db = db_connection()
-        # Izdzēšam attēlu no mapes, kad tas nav vairs nepieciešams
         r = db.execute("SELECT attels FROM mantubaze WHERE id = ?", (item_id,)).fetchone()
         if r and r['attels']:
             cels = os.path.join(app.config['UPLOAD_FOLDER'], r['attels'])
@@ -93,7 +92,6 @@ def cancel_request():
     item_id = request.form.get("id")
     if item_id:
         db = db_connection()
-        # Atgriežam mantu publiskajā sarakstā, ja nav atnācis īpašnieks vai ir kļūda
         db.execute("UPDATE mantubaze SET ivn = 1, p_liet = NULL, p_laiks = NULL WHERE id = ?", (item_id,))
         db.commit()
         db.close()
@@ -117,7 +115,9 @@ def konts():
         else:
             filename = None
             if file and file.filename != '':
-                filename = secure_filename(file.filename)
+                # Pievienojam timestamp, lai failu nosaukumi nedublētos
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S_")
+                filename = timestamp + secure_filename(file.filename)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
             db = db_connection()
